@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import kagglehub
 from datetime import datetime
 import matplotlib.dates as mdates
+from tkinter import *
+root = Tk()
 
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter, AutoMinorLocator)
 
@@ -15,7 +17,16 @@ from torchvision import transforms, utils
 
 np.set_printoptions(threshold=sys.maxsize)
 
-print("Start")
+class NBAStats(Dataset):
+    def __init__(self):
+        self.stats
+        self.columns
+
+    def playerTrack(player, stat1=None, stat2=None, stat3=None, stat4=None, stat5=None, stat6=None):
+        pass
+
+    def scatterStats(index_1, index_2):
+        pass
 
 # Download latest version of NBA database
 
@@ -110,10 +121,23 @@ def playerTrack(player, stat1=None, stat2=None, stat3=None, stat4=None, stat5=No
     
     plt.subplots_adjust(wspace=0.3, hspace=0.75)
     
-    plt.show()    
-playerTrack("Kevin Durant")
-    
-scatterStats(3,13)
+    plt.show()   
+
+if __name__ == '__main__':
+
+    a = StringVar()
+
+    # Input a players name and run playerTrack
+    Label(root, text="Enter a player's name").pack()
+    Entry(root, textvariable=a).pack()
+    Button(root, text='Confirm', command=lambda:playerTrack(a.get)).pack()
+
+    # Select stat categories and show scatter graph of stat categories for all players
+    Label(root, text="Enter two category numbers: The stats are: 0 - ").pack()
+    b, c = Entry(root).pack(), Entry(root).pack() 
+    Button(root, text='Confirm', command=lambda:scatterStats(b.get, c.get)).pack()
+
+    scatterStats(3,13)
 
 
 
