@@ -136,7 +136,17 @@ def playerTrack(player, stat1=None, stat2=None, stat3=None, stat4=None, stat5=No
         return True
     else:
         return False
-     
+    
+def nameComp(name):
+    # take a name input and ignore spelling errors and differences in format to get the right player
+    
+    # Turn name into an array of all name components
+    name_plain = np.split(name.lower()) 
+    
+    # Check if more than one word is in the name inputted, and if there's any punctuation
+    if len(name_plain) > 1:
+        # run with comparison to the name parts
+        pass
 
 if __name__ == '__main__':
     screen = GraphWindow()
