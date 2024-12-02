@@ -7,9 +7,11 @@ import pandas as pd
 import opendatasets as od
 import matplotlib.pyplot as plt
 
+import kaggle
 import kagglehub
 from datetime import datetime
 import matplotlib.dates as mdates
+
 import tkinter as tk
 import tkinter.messagebox
 import tkinter.ttk as ttk
@@ -134,201 +136,12 @@ def playerTrack(player, stat1=None, stat2=None, stat3=None, stat4=None, stat5=No
         return True
     else:
         return False
-
-class GraphWindow(tk.Tk):
-    def __init__(self):
-        super().__init__() 
-        
-        self.canvas = tk.Canvas(self, width=1300, height=730, bg='blue')
-        self.canvas.pack(fill="both", expand=True)
-        self.canvas.bind("<Configure>", self.resize_image)
-            
-        self.commitButton = tk.Button(
-            self.canvas,
-            text="Commit?",
-            width=13,
-            height=3,
-            bd = '5',
-            bg="blue",
-            fg="yellow",
-            #command = self.commit
-        )
-        
-        self.notCommitButton = tk.Button(
-            self.canvas,
-            text="Don't commit",
-            width=13,
-            height=3,
-            bd = '5',
-            bg="blue",
-            fg="yellow",
-            #command = self.notCommit
-        ) 
-
-        self.genButton = tk.Button(
-            self,
-            text="Generate",
-            width=15,
-            height=3,
-            bd = '5',
-            bg="blue",
-            fg="yellow",
-            #command = self.imageGen
-        ) 
-
-        self.resetButton = tk.Button(
-            self,
-            text="Reset",
-            width=15,
-            height=3,
-            bd = '5',
-            bg="blue",
-            fg="yellow",
-            #command = self.imageReset
-        ) 
-        
-        self.colourButton = tk.Button(
-            self,
-            text="Colourise",
-            width=15,
-            height=3,
-            bd = '5',
-            bg="blue",
-            fg="yellow",
-            #command = self.imageColour
-        ) 
-
-        self.exportButton = tk.Button(
-            self,
-            text="Export",
-            width=15,
-            height=3,
-            bd = '5',
-            bg="blue",
-            fg="yellow",
-            #command = self.exportPrep
-        ) 
- 
-
-        self.removeButton = tk.Button(
-            self.canvas,
-            text="Remove",
-            width=13,
-            height=3,
-            bd = '5',
-            bg="blue",
-            fg="yellow",
-            #command = self.remove
-        ) 
-
-        self.labInput = tk.StringVar(
-
-        )
-
-        self.executionTimeLabel = tk.Label(
-            self,
-            text="Execution time not available",
-            width=15,
-            height=3,
-            wraplength=100, justify="center",
-            bd = '5'
-        ) 
-        
-        self.labelInput = tk.Entry (
-            self.canvas,
-            textvariable = self.labInput,
-            width = 16
-            
-        )
-
-        self.inputButton = tk.Button(
-            self.canvas,
-            text="Check Label",
-            command = self.textInput
-        ) 
-
-        self.removeLabelsButton = tk.Button(
-            self.canvas,
-            text="Remove labels",
-            width=12,
-            height=2,
-            bd = '4',
-            bg="blue",
-            fg="yellow",
-            command = self.removeLabel
-        ) 
-
-        self.allLabButton = tk.Button(
-            self.canvas,
-            text="All Labels",
-            width=12,
-            height=2,
-            bd = '4',
-            bg="blue",
-            fg="yellow",
-            command = self.allLabels
-        ) 
-        
-        self.hover_window = tk.Label(
-            self.canvas, 
-            width=8, 
-            height=2, 
-            background="grey", 
-            fg="white")
-        
-        self.label_file_explorer = tk.Label(self,
-                                    text = "File Explorer using Tkinter",
-                                    width = 50, height = 1,
-                                    fg = "blue")
-              
-        self.button_explore = tk.Button(self,
-                                text = "Browse Files",
-                                command = self.browseFiles)
-        
-        self.labelInput.bind("<1>", self.clickedLabel)
-        self.labelInput.bind("<ButtonRelease-1>", self.unclickedLabel)
-
-        self.inputButton.bind("<1>", self.clickedLabel)
-        self.inputButton.bind("<ButtonRelease-1>", self.unclickedLabel)
-
-        self.removeLabelsButton.bind("<1>", self.clickedLabel)
-        self.removeLabelsButton.bind("<ButtonRelease-1>", self.unclickedLabel)
-
-        self.executionTimeLabel.bind("<1>", self.clickedLabel)
-        self.executionTimeLabel.bind("<ButtonRelease-1>", self.unclickedLabel)
-
-        self.allLabButton.bind("<1>", self.clickedLabel)
-        self.allLabButton.bind("<ButtonRelease-1>", self.unclickedLabel)
-
-        self.colourButton.bind("<1>", self.clickedLabel)
-        self.colourButton.bind("<ButtonRelease-1>", self.unclickedLabel)
-
-        self.commitButton.bind("<1>", self.clickedLabel)
-        self.commitButton.bind("<ButtonRelease-1>", self.unclickedLabel)
-        
-        self.notCommitButton.bind("<1>", self.clickedLabel)
-        self.notCommitButton.bind("<ButtonRelease-1>", self.unclickedLabel)
-        
-        self.removeButton.bind("<1>", self.clickedLabel)
-        self.removeButton.bind("<ButtonRelease-1>", self.unclickedLabel)
-
-        self.exportButton.bind("<1>", self.clickedLabel)
-        self.exportButton.bind("<ButtonRelease-1>", self.unclickedLabel)
-
-
-        self.executionTime_window = self.canvas.create_window(self.imageWidth,self.canvasHeight-10, anchor='se', window=self.executionTimeLabel)
-        self.export_window = self.canvas.create_window(self.imageWidth - 120,int(self.canvasHeight * 755/765), anchor='se', window=self.exportButton)
-
-        self.gen_window = self.canvas.create_window(int(10*self.imageWidth/1300),int(self.canvasHeight * 755/765), anchor='sw', window=self.genButton)
-        self.reset_window = self.canvas.create_window(int(210*self.imageWidth/1300),int(self.canvasHeight * 755/765), anchor='sw', window=self.resetButton)
-        self.colour_window = self.canvas.create_window(int(410*self.imageWidth/1300),int(self.canvasHeight * 755/765), anchor='sw', window=self.colourButton)
-        
-        self.label_file_explore_window = self.canvas.create_window(int(410*self.imageWidth/1300),int(self.canvasHeight * 755/765), anchor='sw', window=self.label_file_explorer)
-        self.button_explore_window = self.canvas.create_window(int(700*self.imageWidth/1300),int(self.canvasHeight * 755/765), anchor='sw', window=self.button_explore)
-    def 
+     
 
 if __name__ == '__main__':
-
+    screen = GraphWindow()
+    
+    screen.mainloop()
     # Input a players name and run playerTrack
     while True:
         playerTrackRun = False
