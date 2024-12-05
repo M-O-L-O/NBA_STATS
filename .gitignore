@@ -2,4 +2,5 @@
 *.csv
 
 # Ignore the nba stats folder
-\nba-player-stats-season-2425
+nba-player-stats-season-2425/
+nba-player-stats-season-2425/database_24_25.csv

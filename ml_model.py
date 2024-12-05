@@ -1,6 +1,8 @@
 import sys
 import torch
 import tensorflow
+import re
+import requests
 
 import numpy as np
 import pandas as pd
@@ -15,6 +17,9 @@ import matplotlib.dates as mdates
 import tkinter as tk
 import tkinter.messagebox
 import tkinter.ttk as ttk
+
+import bs4
+from bs4 import BeautifulSoup
 
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter, AutoMinorLocator)
 
@@ -70,7 +75,50 @@ for player in players:
     
     stats.append(np.mean(raw_data[indices].reshape((index, columns)), axis=0))
     
+    # get nicknames from Basketball Reference
+    forename, surname = re.sub('[^A-za-z ]+', '', player.lower()).split()
+    
+    url = 'https://www.basketball-reference.com/players/{}/{}.html'.format(surname[0], surname[:5] + forename[:2] + '01')
+    
+    r = requests.get(url)
+    soup = BeautifulSoup(r.content, 'html.parser')
 
+    nickname_str = ["None found"]
+    
+    try:
+        divs = soup.find('div', id='meta').find_all('div')
+        
+        
+        print(player)
+        
+        try:
+            div = divs[1]
+        except:
+            div = divs
+        
+        try:
+            div_ps = div.find_all('p')
+        except:
+            divs = soup.find('div', id='meta').find_all('p')
+                
+        for i, para in enumerate(div_ps):
+            #print(i,': ',[para])
+            #print(i,': ',str(para))
+            
+            if '(' in str(para) and re.sub('[^A-za-z,() ]+', '', para.text)[0] == '(':
+                #print(para.text)
+                nickname_str = [re.sub('[^A-za-z, ]+', '', para.text).split(', ')]
+                break
+        
+        #soup.body.div(id="wrap").div(id="info").div(id="meta").div.p(third)
+        for nickname in nickname_str:
+            print(nickname)
+    except:
+        raise Exception("I dunno")
+        print("error")
+        for nickname in nickname_str:
+            print(nickname)
+    
 #print(pd.DataFrame(nba_stat_names))
 
 # stats = data[nba_stat_names].to_numpy()
@@ -136,23 +184,66 @@ def playerTrack(player, stat1=None, stat2=None, stat3=None, stat4=None, stat5=No
         return True
     else:
         return False
-    
+
+def lemmaPlayers():
+    # using player names, generates word bank for probabilistic comparison
+    # Do I add nicknames manually or do I leave it as the four rules (see notes)
+    pass
+
+player_name_bank = lemmaPlayers()
+
 def nameComp(name):
     # take a name input and ignore spelling errors and differences in format to get the right player
     
+    # Can i add nicknames? draw from nba reference?
+    
     # Turn name into an array of all name components
-    name_plain = np.split(name.lower()) 
+    name_plain = re.sub('[^A-za-z ]+', '', name.lower()).split() 
+    
+    print(name_plain)
+    
+    # Create adjacent word bank/lemmatization for each player name? - call func.
     
     # Check if more than one word is in the name inputted, and if there's any punctuation
-    if len(name_plain) > 1:
-        # run with comparison to the name parts
+    if len(name_plain) == 1:
+        # one name case - check against surnames first
+        
+        # check against forenames
+        
+        # return highest prob
         pass
-
+    elif len(name_plain) == 2:
+        # two name case - calc probs for each word
+        
+        # return highest match
+        pass
+    else:
+        if name_plain[2] == 'jnr' or np.unique(name_plain[2]) == 'i':
+            # use first two words
+            pass
+        else:
+            # error - no name with three names
+            pass
+            
+         
 if __name__ == '__main__':
-    screen = GraphWindow()
+    #screen = GraphWindow()
     
-    screen.mainloop()
+    #screen.mainloop()
     # Input a players name and run playerTrack
+    
+    for player in players:
+        forename, surname = player.split()
+        
+        url = 'https://www.basketball-reference.com/players/g/{}.html'.format(surname[:5] + forename[:2])
+        
+        with open(url) as fp:
+            soup = BeautifulSoup(fp, 'html.parser')
+
+        soup.findAll('div,attrs={"id":"meta"}')
+        soup.body.div(id="wrap").div(id="info").div(id="meta").div.p(third)
+        nickname_str = BeautifulSoup("p", 'html.parser')
+    
     while True:
         playerTrackRun = False
 
