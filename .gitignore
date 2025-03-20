@@ -1,5 +1,6 @@
 # Ignore the csv files
 *.csv
+notes.txt
 
 # Ignore the nba stats folder
 nba-player-stats-season-2425/
