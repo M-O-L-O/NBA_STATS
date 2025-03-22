@@ -18,10 +18,13 @@ import matplotlib.dates as mdates
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 
-# Clustering to match for prediction
+# TASK: Clustering to match for prediction
+
+# Set PyTorch print settings
+torch.set_printoptions(threshold=10000, linewidth=140, precision=2)
 
 # Get each players stats - historical data from somewhere (unchanging so save locally)
-data = pd.read_csv('data/allPlayerStats.csv')
+data = pd.read_csv('data/allPlayerStatsNew.csv')
 
 
 def dataFormat(raw_data, player_name):
@@ -34,20 +37,32 @@ def dataFormat(raw_data, player_name):
     
     formatted_data = []
     
-    headers = ['Year','PTS','MP','AST','STL','BLK','TRB','TOV','FG','FGA','FG%','3P','3PA','3P%','2P','2PA','2P%','FT','FTA','FT%','eFG%','ORB','DRB','PF',]
+    headers = ['PTS','MP','AST','STL','BLK','TRB','TOV','FG','FGA','FG%','3P','3PA','3P%','2P','2PA','2P%','FT','FTA','FT%','eFG%','ORB','DRB','PF',]
     
     for i, year in enumerate(years_played):
-        
         interm = player_data.loc[player_data['Year'] == year][headers]
-        raw_player_year_x = torch.tensor(interm.to_numpy())   
+        raw_player_year_x = torch.from_numpy(interm.to_numpy(dtype=np.float32))   
         
         games_played, games_started = np.sum(player_data.loc[player_data['Year'] == year]['G'].values), np.sum(player_data.loc[player_data['Year'] == year]['GS'].values) 
         games_proportion = torch.tensor(player_data.loc[player_data['Year'] == year]['G'].to_numpy(dtype = np.float32) / int(float(games_played)))
         
-        # if want to inclde name, add in front of float games
-        new_rows = torch.cat((torch.tensor([float(games_played),float(games_started)]),torch.mul(raw_player_year_x, games_proportion.repeat(len(headers)))))
+        
+        if len(games_proportion) == 1:
+            multipl = raw_player_year_x[0]
+            games_section = torch.tensor([float(year), float(games_played),float(games_started)])
+        
+        else:
+            #print(raw_player_year_x.size(), games_proportion.size())
+            multipl = torch.matmul(torch.transpose(raw_player_year_x, 0, 1), games_proportion.T)
+            games_section = torch.tensor([float(year), float(games_played),float(games_started)])
+        
+        # Should all condense into one line
+        # if want to include name, add in front of float games
+        new_rows = torch.cat((games_section,multipl))
         
         formatted_data.append(new_rows)
+        if new_rows.size() != torch.Size([26]):
+            raise Exception("At year {}, problem occured".format(year))
     
     return torch.stack(formatted_data)     
         
@@ -62,13 +77,15 @@ def allDataFormat(raw_data):
     for player in player_names:
         X.append(dataFormat(data, player))
     
-    return torch.stack(X, axis = 2)
+    return X
 
 # Just realised name not needed - can exclude
 
 X = allDataFormat(data)
 
-print(X)
+print(X[5])
+print(X[50])
+print(X[150])
 
 ### DBSCAN Algorithm
 
