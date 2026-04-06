@@ -21,7 +21,7 @@ from torchvision import transforms, utils
 # TASK: Clustering to match for prediction
 
 # Set PyTorch print settings
-torch.set_printoptions(threshold=10000, linewidth=140, precision=2)
+torch.set_printoptions(threshold=10000, linewidth=140, precision=2, edgeitems=8)
 
 # Standard Deviation ignoring NaN values
 def nanstd(o, dim, keepdim=False):
@@ -99,19 +99,20 @@ def allDataFormat(raw_data):
     #    Return normalised distance using Z score (SHOULD THIS BE A PRECURSORY STEP BEFORE CALCULATING DISTANCE??? - NORMALISE STATS THEN CALCULATE DISTANCE??)
     #    RIGHT NOW IT'LL NORMALISE THE DISTANCE BETWEEN EACH STAT
 
+    columns = torch.transpose(torch.cat(X),0,1)
+    # - you want to get rid of column index 0 as it is year, which shouldn't be normalised
+    # should the games played be normalised? yes as it doesnt make a big diff
+    # set mean to 0 and standard deviations to 1?
+    
+    means = torch.tensor([torch.nanmean(column, 0).item() for column in columns])
+    stds = torch.tensor([nanstd(column, 0).item() for column in columns])
+    means[0] = 0
+    stds[0] = 1
+    
+    print(means, stds)
+    
     for x in X: 
-        columns = torch.transpose(torch.cat(x),0,1)
-        # - you want to get rid of column index 0 as it is year, which shouldn't be normalised
-        # should the games played be normalised? yes as it doesnt make a big diff
-        # set mean to 0 and standard deviations to 1?
-        means = torch.tensor([torch.nanmean(column, 0).item() for column in columns])
-        stds = torch.tensor([nanstd(column, 0).item() for column in columns])
-        means[0] = torch.zeros(len(means[0]))
-        stds[0] = torch.ones(len(stds[0]))
-        
-        
-        for datum in x:
-            X_out.append(torch.div( (datum - means.repeat(len(datum), 1) ), stds.repeat(len(datum), 1) ))
+        X_out.append(torch.div( torch.abs( x - means.repeat(len(x), 1) ), stds.repeat(len(x), 1) ))
     
     return X_out
 
@@ -138,9 +139,8 @@ def dist(player1=torch.Tensor, player2=torch.Tensor):
     
     min_it = int(np.min([year1,year2]))
     
-    
     # Here calculate dist between same shape parts then append the mean to fill the end
-    
+    # NOW THAT DISTANCE IS NORMALISED, SHOULD EMPTY YEARS BE 1+ STANDARD DEVIATIONS??
     if year1 < year2:
         # Player 1 less years
         dist_half = torch.abs(torch.subtract(player1,player2[:min_it]))
@@ -151,18 +151,109 @@ def dist(player1=torch.Tensor, player2=torch.Tensor):
         dist_vec = torch.cat( (dist_half, (1.5 * torch.nanmean(dist_half, 0)).repeat(year1 - year2,1)) )
     else:
         dist_vec = torch.abs(torch.subtract(player1,player2))
-        
-    return dist_vec
-
-print(dist(X))
-
-def DBSCAN():
     
+    # Should be returning scalar?? determining total distance from each? 
+    # Create average per year distance?
+    
+    return  torch.nanmean(dist_vec, 0)
+
+print(X[50].size(), X[5].size())
+print(dist(X[50], X[5]))
+
+print(X[67].size(), X[420].size())
+print(dist(X[67], X[420]))
+
+def dist_all(input):
+    ### WAY TOO SLOW - REMAKE MATRIX TO DO ALL AT ONCE?
+    ### -- Doesn't work as the dist function works one on one - adapt to make it work for all?
+    ### Find way to expand matrices in mass
+    ### STACK EM VERT AND REPEAT WITH ROTATED STACKS - STACK VERTICALLY AND SUBTRACT? THEN DO CALCULATION?
+    
+    ### NEED TO ADD DIST FUNCTION
+    
+    dist_mat = torch.zeros((len(input) - 1, len(input) - 1))
+    dist_sub = torch.zeros((len(input) - 1, len(input) - 1))
+    
+    for k in range(len(dist_mat)):
+        # Truncate so shapes match
+        # mean * (3n + k) / 2
+        
+        pre_row_mat = input[:-(k+1)]
+        pre_row_sub = input[(k+1):]
+        
+        dim_set = 0
+        
+        dim_row = np.minimum([d.size(dim_set) for d in pre_row_mat], [d.size(dim_set) for d in pre_row_sub])
+        
+        dist_mat[k,:-k] = [k.narrow(dim_set, 0, j) for j,k in zip(dim_row, pre_row_mat)]   
+        dist_sub[k,:-k] = [k.narrow(dim_set, 0, j) for j,k in zip(dim_row, pre_row_sub)]
+        
+        # Add the mirror.
+        dist_mat[k:,-(k + 1)] = torch.fliplr(input[:-(k+1)])
+        dist_sub[k:,-(k + 1)] = torch.fliplr(input[:-(k+1)]) 
+    
+    dist_mat -= dist_sub
+    
+    dist_out = torch.zeros(input.size())
+
+    mask_new = torch.zeros((8,8))
+    
+    for k, row in enumerate(dist_mat):
+        mask_new[k:] = row[:-k]
+        mask_new[:k] = torch.fliplr(row[-k:])
+        
+    mask_up = torch.zeros((9,9))
+    mask_down = torch.zeros((9,9))
+    
+    mask_up[:-1, :-1] = torch.triu(mask_new)
+    mask_down[1:, 1:] = torch.tril(mask_new)
+
+    dist_out = mask_up + mask_down
+    
+    # for i in range(len(input)):
+    #     player1 = input[i]
+    #     for j in range(i):
+    #         if i == j:
+    #             pass
+    #         else:
+    #             player2 = input[j]
+    #             dist_mat[i,j] = dist_mat[j,i] = torch.nanmean(dist(player1,player2)).item() 
+                
+    return dist_out
+            
+dist_matrix = dist_all(X)
+d_m_np = dist_matrix.numpy() #convert to Numpy array
+dmf = pd.DataFrame(d_m_np) #convert to a dataframe
+dmf.to_csv("distance_matrix",index=False)
+print(dist_matrix) 
+
+# Determine whether distance is within the neighbourhood (set epsilon value - 0.5 or 1 standard deviation? - adjust depending on what outputs)
+def RangeQuery(dist_store, index, mpts = 10, eps = 26 * 0.75):
+    # Creates tuples of the distances of all with 
+    all_dists = sorted(enumerate(dist_store[index]), key=lambda i: i[1])
+    
+    # 
+    if torch.sum(all_dists[0,:mpts]).item() < eps:
+        return [all_dists[index] for index in all_dists[1,:mpts]]
+    else:
+        return []
+
+# Uses DBSCAN algorithm - will assign labels to all points or assign them as noise - needs epsilon and mpts input
+def DBSCAN(X,mpts,eps=0.65):
+    # Determine core objects for each object (neighbourhod has at least mpts)
+    # If not core object, noise
+    # Cluster where every point is core object and within each others neighbourhoods
     pass
 
-def RangeQuery():
+# Uses HDBSCAN algorithm - will create MST and determine (?) epsilon value from there - needs mpts input
+def HDBSCAN(X,mpts):
+    # Compute core distance (distance of point x from mpts'th nearest point)
+    # Retrospectively set epsilon using core distance (epsilon > core distance)
+    # Mutual Reachability Distance (MRD): maximum of respective core distances and distance between the points
+    # Compute minimum spanning tree using MRD - all points either core distance or distance exceeds that
+    # Expand MST to get MST_ext by adding self-edge with core distance as weight (I think it will then eliminate all connections that exceed the core distances)
+    # Remove in decreasing order and add labels
     pass
-
 
 # 3) Use core distance to determine which to group together
 
