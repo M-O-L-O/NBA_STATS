@@ -164,6 +164,14 @@ print(X[67].size(), X[420].size())
 print(dist(X[67], X[420]))
 
 def dist_all(input):
+    ### interpolate the grid along axes
+    ### stack the interpolated stats n times, transpose, subtract from one another then find absolute value
+    ### also return mask of empty values
+    ### stack the return mask, transpose and XOR them 
+    ### then return each player comps deviation from reality (use x^1.5 to model consecutive missed years)
+    ### apply dev from real to list of player comps (should be same 2d array shape just dot prod.)
+    
+def dist_all_OLD(input):
     ### WAY TOO SLOW - REMAKE MATRIX TO DO ALL AT ONCE?
     ### -- Doesn't work as the dist function works one on one - adapt to make it work for all?
     ### Find way to expand matrices in mass
@@ -220,7 +228,7 @@ def dist_all(input):
     #             dist_mat[i,j] = dist_mat[j,i] = torch.nanmean(dist(player1,player2)).item() 
                 
     return dist_out
-            
+           
 dist_matrix = dist_all(X)
 d_m_np = dist_matrix.numpy() #convert to Numpy array
 dmf = pd.DataFrame(d_m_np) #convert to a dataframe
