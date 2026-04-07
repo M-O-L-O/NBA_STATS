@@ -170,7 +170,8 @@ def dist_all(input):
     ### stack the return mask, transpose and XOR them 
     ### then return each player comps deviation from reality (use x^1.5 to model consecutive missed years)
     ### apply dev from real to list of player comps (should be same 2d array shape just dot prod.)
-    
+    return
+
 def dist_all_OLD(input):
     ### WAY TOO SLOW - REMAKE MATRIX TO DO ALL AT ONCE?
     ### -- Doesn't work as the dist function works one on one - adapt to make it work for all?
